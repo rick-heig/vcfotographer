@@ -25,7 +25,7 @@ object VCFotographer extends App {
   val p = getClass.getPackage
   val name = p.getImplementationTitle
   val version = p.getImplementationVersion
-  logger.info("VCFotographer version " + version)
+  //logger.info("VCFotographer version " + version)
 
   val loadSession = false
   val session = ""
