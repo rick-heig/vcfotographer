@@ -12,9 +12,17 @@ import ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 object VCFotographer extends App {
+
+  ////////////////
+  // PARAMETERS //
+  ////////////////
   case class VCFotographerParameters(scalingFactor: Option[Double] = None, igvPort : Int = 60151)
   val DEFAULT_PARAMETERS = VCFotographerParameters()
-  val parameters = DEFAULT_PARAMETERS
+  val parameters = DEFAULT_PARAMETERS.copy(scalingFactor = Some(100.0))
+
+  val usage = """
+  |Usage: vcfotographer -i variant.vcf -b reads.bam [--scaling factor]
+  """.stripMargin
 
   // Logging
   val logger = Logger("Log")
@@ -27,23 +35,72 @@ object VCFotographer extends App {
   val session = ""
   val sleepIntervalms = 10 // ms
 
-  val basePath = new File(".").getCanonicalPath() + "/"
-  if (!basePath.matches("\\S+")) {
-    logger.error("Path cannot contain whitespaces")
+  def printUsageAndQuit() = {
+    println(usage)
+    System.exit(1)
+  }
+
+  /////////////////////////
+  // Input args handling //
+  /////////////////////////
+  if (args.length == 0) {
+    printUsageAndQuit
+  }
+
+  // The way options are handled in this program is not the most efficient but needs only to be done once and on small parameter lists so don't worry about efficiency
+  val singleOptions: Set[String] = Set()
+  case class OptionPair(option: String, value: String)
+  def extractOptions(args: Array[String]) = {
+    def nextOption(ol: List[OptionPair], list: List[String]): List[OptionPair] = {
+      list match {
+        case Nil                          => ol.reverse
+        case option :: tail if (singleOptions.contains(option))  => nextOption(OptionPair(option, "") :: ol, tail)
+        case option :: value :: tail if (option.startsWith("-")) => nextOption(OptionPair(option, value) :: ol, tail)
+        case _                            => printUsageAndQuit(); List()
+      }
+    }
+    nextOption(List(), args.toList)
+  }
+
+  val options = extractOptions(args)
+
+  ////////////////////////////
+  // Extract args to values //
+  ////////////////////////////
+
+  //val basePath = new File(".").getCanonicalPath() + "/"
+  val basePath = ""
+  if (!basePath.isEmpty && !basePath.matches("\\S+")) {
+    logger.error("The path \"" + basePath + "\" has whitespaces")
     throw new Exception("Path with whitespace")
   }
 
-  //val file = "sandbox/test.vcf"
-  val file = "sandbox/motherHC.vcf"
-  val filePath = basePath + file
-  val bamFile = "sandbox/bam.bam"
-  // TODO : Check if bai is existing
-  val bamFilePath = basePath + bamFile
+  // Get input files
+  val inputFiles = options filter {_.option.equals("-i")} map {basePath + _.value}
+  if (inputFiles.isEmpty) {
+    printUsageAndQuit()
+  } else {
+    logger.info("Variants will be captured from : ")
+    inputFiles foreach {logger.info(_)}
+  }
+
+  // Get bam files
+  val bamFiles = options filter {_.option.equals("-b")} map {basePath + _.value}
+  if (!bamFiles.isEmpty) {
+    logger.info("Loading reads from : ")
+    bamFiles foreach {logger.info(_)}
+  }
+
+  // Outputpath
   val photobook = "sandbox/photobook/"
   val photobookPath = photobook
+  logger.info("Captured variants will go into : ")
+  logger.info(photobookPath)
 
   // Read input files (VCFs / BEDs etc).
-  val entries = vcfotographer.VcfToolBox.extractEntriesFromFile(file)
+  val entries = (inputFiles map {vcfotographer.VcfToolBox.extractEntriesFromFile(_)}).flatten.sortBy(entry => entry.chr + entry.pos.toString)
+  // Sorting is optional but more optimized for IGV to load in sorted order
+  logger.info(entries.size + " variants will be captured")
 
   Basic.time {
 
@@ -59,8 +116,8 @@ object VCFotographer extends App {
         case Some(_) => {
           logger.info("IGV is responsive")
 
-          sendCommandToIGV("new", connectionToIGV)
-          sendCommandToIGV("setSleepInterval " + sleepIntervalms.toString, connectionToIGV)
+          sendCommandToIGVTimeOut("new", connectionToIGV)
+          sendCommandToIGVTimeOut("setSleepInterval " + sleepIntervalms.toString, connectionToIGV)
 
           // Set screenshot directory
           sendCommandToIGV("snapshotDirectory " + photobookPath, connectionToIGV)
@@ -70,10 +127,10 @@ object VCFotographer extends App {
             sendCommandToIGV("load " + session, connectionToIGV)
           } else {
             // Load VCFs
-            sendCommandToIGV("load " + filePath, connectionToIGV)
+            inputFiles foreach {file => sendCommandToIGV("load " + file, connectionToIGV)}
 
             // Load BAMs
-            sendCommandToIGV("load " + bamFilePath, connectionToIGV)
+            bamFiles foreach {file => sendCommandToIGV("load " + file, connectionToIGV)}
 
             // Load other files
             //...
@@ -110,5 +167,5 @@ object VCFotographer extends App {
       connectionToIGV.socket.close()
     } // Connected to IGV
   } // Connection to IGV ?
-  }
+  } // Time
 }
