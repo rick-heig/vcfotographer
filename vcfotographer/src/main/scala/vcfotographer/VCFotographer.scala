@@ -18,10 +18,32 @@ object VCFotographer extends App {
   ////////////////
   case class VCFotographerParameters(scalingFactor: Option[Double] = None, igvPort : Int = 60151)
   val DEFAULT_PARAMETERS = VCFotographerParameters()
-  val parameters = DEFAULT_PARAMETERS.copy(scalingFactor = Some(100.0))
 
   val usage = """
-  |Usage: vcfotographer -i variant.vcf -b reads.bam [--scaling factor]
+  |                 IMPRECISE;SVTYPE                    VCFotographer
+  |      FILTER   length,assembly=hg19                  
+  |    QUAL   BL  PQ                fileDate=2020       Author  : Rick Wertenbroek
+  |  INFO      1KGP    SVLEN=+42;              FILE     
+  |  ID              REF       PASS      VCF     ZU        
+  |                BQ   0/1      PASS
+  |              SB   ok           PASS
+  |             AA  cG               del
+  |            DB  :O                 ins
+  |            MQ  .                  dup
+  |            GL                     inv
+  |             MQ                   cnv
+  |              ALT                bnd
+  |                ook            PASS
+  |                  END       PASS
+  |  NS                VALIDATED'                GT
+  |  GCCACNACGCCTGGCTAATT-----TATTTTTACTAGAGACGGGGT
+  |    TATAAAACNANACTTCAGAATTACCATAATATTGATTACAAT
+  |
+  |
+  |
+  |Usage: vcfotographer -i variant.vcf -b reads.bam [--scaling factor] [-a additional_track]
+  |
+  |Additional tracks : They can be of any type supported by IGV, however be wary that loading large files may slow IGV down, e.g., big BED files.
   """.stripMargin
 
   // Logging
@@ -67,6 +89,11 @@ object VCFotographer extends App {
   ////////////////////////////
   // Extract args to values //
   ////////////////////////////
+  val scalingFactor = (options filter {_.option.equals("--scaling")}).headOption match {
+    case None => None
+    case Some(op) => Some(op.value.toDouble)
+  }
+  val parameters = DEFAULT_PARAMETERS.copy(scalingFactor = scalingFactor)
 
   //val basePath = new File(".").getCanonicalPath() + "/"
   val basePath = ""
@@ -90,6 +117,8 @@ object VCFotographer extends App {
     logger.info("Loading reads from : ")
     bamFiles foreach {logger.info(_)}
   }
+
+  val additionalTrackFiles = options filter {_.option.equals("-a")} map {basePath + _.value}
 
   // Outputpath
   val photobook = "sandbox/photobook/"
@@ -133,7 +162,7 @@ object VCFotographer extends App {
             bamFiles foreach {file => sendCommandToIGV("load " + file, connectionToIGV)}
 
             // Load other files
-            //...
+            additionalTrackFiles foreach {file => sendCommandToIGV("load " + file, connectionToIGV)}
           }
 
           // For all variants take a snapshot
