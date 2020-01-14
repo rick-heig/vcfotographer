@@ -12,39 +12,13 @@ import ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
 
 object VCFotographer extends App {
+  println(vcfotographer.TextAssets.logo)
 
   ////////////////
   // PARAMETERS //
   ////////////////
   case class VCFotographerParameters(scalingFactor: Option[Double] = None, igvPort : Int = 60151)
   val DEFAULT_PARAMETERS = VCFotographerParameters()
-
-  val usage = """
-  |                 IMPRECISE;SVTYPE                    VCFotographer
-  |      FILTER   length,assembly=hg19                  
-  |    QUAL   BL  PQ                fileDate=2020       Author  : Rick Wertenbroek
-  |  INFO      1KGP    SVLEN=+42;              FILE     
-  |  ID              REF       PASS      VCF     ZU        
-  |                BQ   0/1      PASS
-  |              SB   ok           PASS
-  |             AA  cG               del
-  |            DB  :O                 ins
-  |            MQ  .                  dup
-  |            GL                     inv
-  |             MQ                   cnv
-  |              ALT                bnd
-  |                ook            PASS
-  |                  END       PASS
-  |  NS                VALIDATED'                GT
-  |  GCCACNACGCCTGGCTAATT-----TATTTTTACTAGAGACGGGGT
-  |    TATAAAACNANACTTCAGAATTACCATAATATTGATTACAAT
-  |
-  |
-  |
-  |Usage: vcfotographer -i variant.vcf -b reads.bam [--scaling factor] [-a additional_track]
-  |
-  |Additional tracks : They can be of any type supported by IGV, however be wary that loading large files may slow IGV down, e.g., big BED files.
-  """.stripMargin
 
   // Logging
   val logger = Logger("Log")
@@ -58,7 +32,7 @@ object VCFotographer extends App {
   val sleepIntervalms = 10 // ms
 
   def printUsageAndQuit() = {
-    println(usage)
+    println(vcfotographer.TextAssets.usage)
     System.exit(1)
   }
 
@@ -121,7 +95,11 @@ object VCFotographer extends App {
   val additionalTrackFiles = options filter {_.option.equals("-a")} map {basePath + _.value}
 
   // Outputpath
-  val photobook = "sandbox/photobook/"
+  val outputPath = (options filter {_.option.equals("--output-dir")} map {_.value}).headOption match {
+    case None => "sandbox/photobook/"
+    case Some(value) => value
+  }
+  val photobook = outputPath
   val photobookPath = photobook
   logger.info("Captured variants will go into : ")
   logger.info(photobookPath)
@@ -129,6 +107,8 @@ object VCFotographer extends App {
   // Read input files (VCFs / BEDs etc).
   val entries = (inputFiles map {vcfotographer.VcfToolBox.extractEntriesFromFile(_)}).flatten.sortBy(entry => entry.chr + entry.pos.toString)
   // Sorting is optional but more optimized for IGV to load in sorted order
+  // Maybe do one photobook per VCF
+
   logger.info(entries.size + " variants will be captured")
 
   Basic.time {
@@ -190,7 +170,7 @@ object VCFotographer extends App {
           }
 
           logger.info("Done taking snapshots")
-          //sendCommandToIGV("exit", connectionToIGV)
+          sendCommandToIGV("exit", connectionToIGV)
         } // IGV Responding
       } // IGV Responding ?
       connectionToIGV.socket.close()
