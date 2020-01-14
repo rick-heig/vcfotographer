@@ -70,10 +70,10 @@ object CheckingVariantsInIGV {
     extractEventCoordinates(entry) match {
       case EventCoordinates(chr, start, stop, optEventLength) => {
         optEventLength match {
-          case Some(value) => GenomicWindow(chr, scala.math.max(1, start + (stop-start)/2 - value / 2), stop - (stop-start)/2 + value / 2)
+          case Some(value) => GenomicWindow(chr, scala.math.max(1, (start + (stop-start)/2 - value / 2) -10), stop - (stop-start)/2 + value / 2 + 10)
           case None => {
             if ((stop - start) > 100) {
-              GenomicWindow(chr, start, stop)
+              GenomicWindow(chr, scala.math.max(1, start-10), stop + 10)
             } else {
               val add = (100 - (stop - start)) / 2
               GenomicWindow(chr, scala.math.max(1, start-add), stop + add)
