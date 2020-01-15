@@ -24,8 +24,8 @@ object TextAssets {
   |
   """.stripMargin
   
-  val usage = """Usage: vcfotographer -i variant.vcf -b reads.bam [--scaling factor] [-a additional_track] [--output-dir output_directory]
+  val usage = """Usage: vcfotographer -i variants.vcf -b reads.bam [--scaling factor] [-a additional_track] [--output-dir output_directory]
   |
-  |    Additional tracks - Can be of any type supported by IGV, big file may slow IGV down
+  |    Additional tracks - Can be of any type supported by IGV, big files may slow IGV down
   """.stripMargin
 }
