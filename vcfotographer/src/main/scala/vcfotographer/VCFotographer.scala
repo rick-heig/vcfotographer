@@ -88,6 +88,7 @@ object VCFotographer extends App {
   // Get bam files
   val bamFiles = options filter {_.option.equals("-b")} map {basePath + _.value}
   if (!bamFiles.isEmpty) {
+    bamFiles foreach {file => Utilities.checkBamFile(file)}
     logger.info("Loading reads from : ")
     bamFiles foreach {logger.info(_)}
   }
