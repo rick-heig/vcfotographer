@@ -128,7 +128,6 @@ object VCFotographer extends App {
 
           sendCommandToIGVTimeOut("new", connectionToIGV)
           //sendCommandToIGVTimeOut("maxPanelHeight 4000", connectionToIGV)
-          sendCommandToIGVTimeOut("viewaspairs", connectionToIGV)
           sendCommandToIGVTimeOut("setSleepInterval " + sleepIntervalms.toString, connectionToIGV)
 
           // Set screenshot directory
@@ -147,6 +146,9 @@ object VCFotographer extends App {
             // Load other files
             additionalTrackFiles foreach {file => sendCommandToIGV("load " + file, connectionToIGV)}
           }
+
+          // View as pairs
+          sendCommandToIGVTimeOut("viewaspairs", connectionToIGV)
 
           // For all variants take a snapshot
           val commands: Vector[Future[String]] = Vector()
