@@ -35,7 +35,7 @@ object Things {
     futureAnswer
   }
 
-  def sendCommandToIGVTimeOut(command: String, connection: IgvConnection) = {
-    Await.result(sendCommandToIGVFuture(command, connection), 3.second)
+  def sendCommandToIGVTimeOut(command: String, connection: IgvConnection, seconds: Int = 3) = {
+    Await.result(sendCommandToIGVFuture(command, connection), seconds.second)
   }
 }
