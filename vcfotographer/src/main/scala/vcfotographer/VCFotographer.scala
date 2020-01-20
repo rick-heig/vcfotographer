@@ -121,7 +121,7 @@ object VCFotographer extends App {
       // Send commands to IGV
 
       // Check if IGV is responding
-      Try(sendCommandToIGVTimeOut("echo", connectionToIGV)).toOption match {
+      Try(sendCommandToIGVTimeOut("echo", connectionToIGV, 20)).toOption match {
         case None => logger.error("Could not get a response from IGV before time out")
         case Some(_) => {
           logger.info("IGV is responsive")
