@@ -127,6 +127,7 @@ object VCFotographer extends App {
           logger.info("IGV is responsive")
 
           sendCommandToIGVTimeOut("new", connectionToIGV)
+          sendCommandToIGVTimeOut("maxPanelHeight 4000", connectionToIGV)
           sendCommandToIGVTimeOut("setSleepInterval " + sleepIntervalms.toString, connectionToIGV)
 
           // Set screenshot directory
