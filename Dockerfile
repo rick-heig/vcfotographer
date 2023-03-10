@@ -1,20 +1,24 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 
 # This is a Dockerfile for running VCFotographer : https://github.com/rick-heig/vcfotographer
 MAINTAINER Rick Wertenbroek <rick.wertenbroek@heig-vd.ch>
+
+ENV DEBIAN_FRONTEND noninteractive
 
 #ARG SBT_VERSION=1.3.4
 ARG OPENJDK_VERSION=11
 
 # Install required software and clean as not to make the layer dirty
 RUN apt-get update && apt-get -y upgrade && apt-get install -y \
-	apt-utils curl gnupg && \
+	apt-utils curl gnupg apt-transport-https && \
 	apt-get clean && apt-get purge && \
 	rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
         
 # Add SBT package to manager
-RUN echo "deb https://dl.bintray.com/sbt/debian /" | tee -a /etc/apt/sources.list.d/sbt.list
-RUN curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | apt-key add
+RUN echo "deb https://repo.scala-sbt.org/scalasbt/debian all main" | tee /etc/apt/sources.list.d/sbt.list && \
+    echo "deb https://repo.scala-sbt.org/scalasbt/debian /" | tee /etc/apt/sources.list.d/sbt_old.list && \
+    curl -sL "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x2EE0EA64E40A89B84B2DF73499E82A75642AC823" | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/scalasbt-release.gpg --import && \
+    chmod 644 /etc/apt/trusted.gpg.d/scalasbt-release.gpg
 
 # Install required software and clean as not to make the layer dirty
 RUN apt-get update && apt-get -y upgrade && apt-get install -y \
